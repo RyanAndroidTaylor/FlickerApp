@@ -1,9 +1,8 @@
 package com.flicker;
 
-import android.util.Log;
-
 import com.google.gson.Gson;
 
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -54,39 +53,16 @@ public class FlickerService {
                         HashMap<String, String> parameters = new HashMap<>();
 
                         parameters.put("text", query);
-                        parameters.put("extras", "url_m");
+                        parameters.put("extras", "url_m,url_c");
+                        parameters.put("safe_search", "1");
 
                         String urlString = buildUrl("flickr.photos.search", parameters);
 
-                        HttpsURLConnection urlConnection = (HttpsURLConnection) new URL(urlString).openConnection();
-                        urlConnection.setRequestMethod("GET");
-                        urlConnection.setConnectTimeout(10000);
-                        urlConnection.setReadTimeout(10000);
+                        Buffer buffer = makeRequest("GET", urlString);
 
-                        try {
-                            urlConnection.connect();
+                        PhotoResponse photoResponse = parseResponse(buffer, PhotoResponse.class);
 
-                            if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-                                throw new IllegalStateException("RequestFailed. Request code " + urlConnection.getResponseCode());
-
-                            BufferedSource source = Okio.buffer(Okio.source(urlConnection.getInputStream()));
-
-                            Buffer buffer = new Buffer();
-
-                            while (true) {
-                                long bytesRead = source.read(buffer, 1024);
-
-                                if (bytesRead == -1) {
-                                    break;
-                                }
-                            }
-
-                            PhotoResponse photoResponse = parsePhotoData(buffer);
-
-                            photos.addAll(photoResponse.photos.photo);
-                        } finally {
-                            urlConnection.disconnect();
-                        }
+                        photos.addAll(photoResponse.photos.photo);
 
                         return photos;
                     }
@@ -94,12 +70,61 @@ public class FlickerService {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
-    private PhotoResponse parsePhotoData(Buffer buffer) {
+    public Observable<PhotoInfoResponse> getPhotoInfo(final Long photoId) {
+        return Observable.just(photoId)
+                .subscribeOn(Schedulers.io())
+                .map(new Function<Long, PhotoInfoResponse>() {
+                    @Override
+                    public PhotoInfoResponse apply(Long aLong) throws Exception {
+                        HashMap<String, String> parameters = new HashMap<>();
+
+                        parameters.put("photo_id", photoId.toString());
+
+                        String urlString = buildUrl("flickr.photos.getInfo", parameters);
+
+                        Buffer buffer = makeRequest("GET", urlString);
+
+                        return parseResponse(buffer, PhotoInfoResponse.class);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    private Buffer makeRequest(String method, String url) throws Exception {
+        HttpsURLConnection urlConnection = (HttpsURLConnection) new URL(url).openConnection();
+
+        urlConnection.setRequestMethod(method);
+
+        try {
+            urlConnection.connect();
+
+            if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
+                throw new IllegalStateException("RequestFailed. Request code " + urlConnection.getResponseCode());
+
+            BufferedSource source = Okio.buffer(Okio.source(urlConnection.getInputStream()));
+
+            Buffer buffer = new Buffer();
+
+            while (true) {
+                long bytesRead = source.read(buffer, 1024);
+
+                if (bytesRead == -1) {
+                    break;
+                }
+            }
+
+            return buffer;
+        } finally {
+            urlConnection.disconnect();
+        }
+    }
+
+    private <T> T parseResponse(Buffer buffer, Type type) {
         String responseString = buffer.readString(StandardCharsets.UTF_8);
 
         responseString = responseString.substring(14, responseString.length() - 1);
 
-        return gson.fromJson(responseString, PhotoResponse.class);
+        return gson.fromJson(responseString, type);
     }
 
     private String buildUrl(String method, HashMap<String, String> parameters) {
@@ -107,7 +132,7 @@ public class FlickerService {
 
         stringBuilder.append(method);
 
-        stringBuilder.append("&api_key=b3380a67070b4cb848414a17c9b58433&format=json&save_search=1");
+        stringBuilder.append("&api_key=b3380a67070b4cb848414a17c9b58433&format=json");
 
         for (Map.Entry<String, String> parameter : parameters.entrySet()) {
             stringBuilder.append(String.format("&%s=", parameter.getKey()));

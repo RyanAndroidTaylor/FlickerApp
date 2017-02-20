@@ -2,30 +2,30 @@ package com.flicker;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
+
+import com.flicker.details.DetailFragment;
+import com.flicker.fragments.SearchFragment;
 
 import java.util.List;
 
 public class FlickerActivity extends AppCompatActivity implements FlickerView {
 
-    private RecyclerView imageRecycler;
     private SearchView searchText;
 
     private FlickerPresenter presenter = new FlickerPresenter();
-
-    private ImageAdapter imageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flicker);
 
-        imageRecycler = (RecyclerView) findViewById(R.id.image_recycler);
         searchText = (SearchView) findViewById(R.id.search_text);
 
         searchText.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -44,10 +44,7 @@ public class FlickerActivity extends AppCompatActivity implements FlickerView {
             }
         });
 
-        imageAdapter = new ImageAdapter();
-
-        imageRecycler.setLayoutManager(new GridLayoutManager(this, 3));
-        imageRecycler.setAdapter(imageAdapter);
+        replaceFragment(new SearchFragment());
     }
 
     @Override
@@ -65,12 +62,40 @@ public class FlickerActivity extends AppCompatActivity implements FlickerView {
     }
 
     @Override
-    public void displayImages(List<Photo> imageUrls) {
-        imageAdapter.replaceImages(imageUrls);
+    public void displayImages(List<Photo> photos) {
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+        if (fragment instanceof SearchFragment) {
+            ((SearchFragment) fragment).displayImages(photos);
+        }
     }
 
     @Override
     public void displayErrorMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    public void replaceFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.commitNow();
+    }
+
+    public void showDetailsFragment(DetailFragment fragment) {
+        searchText.setVisibility(View.GONE);
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        transaction.add(R.id.fragment_container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+        searchText.setVisibility(View.VISIBLE);
     }
 }

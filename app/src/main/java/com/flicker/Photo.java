@@ -9,6 +9,7 @@ public class Photo {
     public long id;
     public String title;
     public String url_m;
+    public String url_c;
     public int height;
     public int width;
 }

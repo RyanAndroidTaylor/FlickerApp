@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,13 @@ import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
 
+    private OnItemSelected onItemSelected;
+
     private List<Photo> images = new ArrayList<>();
+
+    public ImageAdapter(OnItemSelected onItemSelected) {
+        this.onItemSelected = onItemSelected;
+    }
 
     @Override
     public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -32,10 +39,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         return images.size();
     }
 
-    public void replaceImages(List<Photo> newImageUrls) {
+    public void replaceImages(List<Photo> newPhotos) {
         images.clear();
 
-        images.addAll(newImageUrls);
+        images.addAll(newPhotos);
 
         notifyDataSetChanged();
     }
@@ -43,14 +50,25 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     class ImageViewHolder extends RecyclerView.ViewHolder {
 
         private ImageView imageView;
+        private TextView imageTitle;
 
         public ImageViewHolder(View itemView) {
             super(itemView);
 
             imageView = (ImageView) itemView.findViewById(R.id.image_view);
+            imageTitle = (TextView) itemView.findViewById(R.id.image_title);
         }
 
         public void bind(final Photo photo) {
+            imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onItemSelected.onItemSelected(photo);
+                }
+            });
+
+            imageTitle.setText(photo.title);
+
             imageView.post(new Runnable() {
                 @Override
                 public void run() {
@@ -62,5 +80,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                 }
             });
         }
+    }
+
+    public interface OnItemSelected {
+        void onItemSelected(Photo photo);
     }
 }
