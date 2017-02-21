@@ -1,7 +1,7 @@
 package com.flicker.details;
 
 import com.flicker.FlickerService;
-import com.flicker.PhotoInfoResponse;
+import com.flicker.models.PhotoInfoResponse;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;

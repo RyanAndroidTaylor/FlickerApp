@@ -10,10 +10,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flicker.App;
-import com.flicker.Photo;
-import com.flicker.PhotoInfo;
-import com.flicker.PhotoInfoResponse;
-import com.flicker.PhotoResponse;
+import com.flicker.models.Photo;
+import com.flicker.models.PhotoInfoResponse;
 import com.flicker.R;
 import com.flicker.SquareImageView;
 

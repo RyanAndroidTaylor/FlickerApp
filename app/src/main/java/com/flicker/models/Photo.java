@@ -1,4 +1,4 @@
-package com.flicker;
+package com.flicker.models;
 
 /**
  * Created by ner on 2/18/17.

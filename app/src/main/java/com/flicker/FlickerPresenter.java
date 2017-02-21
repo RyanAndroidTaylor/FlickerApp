@@ -1,5 +1,9 @@
 package com.flicker;
 
+import com.flicker.database.ImageSearch;
+import com.flicker.models.Photo;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.disposables.CompositeDisposable;
@@ -16,8 +20,26 @@ public class FlickerPresenter {
 
     private CompositeDisposable subscriptions = new CompositeDisposable();
 
-    public void subscribe(FlickerView view) {
-        this.view = view;
+    public void subscribe(final FlickerView flickerView) {
+        this.view = flickerView;
+
+        subscriptions.add(
+                FlickerService.instance().observeRecentSearches()
+                        .subscribe(new Consumer<List<ImageSearch>>() {
+                            @Override
+                            public void accept(List<ImageSearch> searches) throws Exception {
+                                if (view != null) {
+                                    ArrayList<String> recentSearches = new ArrayList<>();
+
+                                    for (ImageSearch imageSearch: searches) {
+                                        recentSearches.add(imageSearch.query);
+                                    }
+
+                                    view.recentSearches(recentSearches);
+                                }
+                            }
+                        })
+        );
     }
 
     public void unSubscribe() {
@@ -46,5 +68,9 @@ public class FlickerPresenter {
                         });
 
         subscriptions.add(subscription);
+    }
+
+    public void updateRecentQueries(String text) {
+        FlickerService.instance().updateCurrentQueryText(text);
     }
 }

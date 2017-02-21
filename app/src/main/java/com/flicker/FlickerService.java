@@ -1,6 +1,14 @@
 package com.flicker;
 
+import com.flicker.database.ImageSearch;
+import com.flicker.models.Photo;
+import com.flicker.models.PhotoInfoResponse;
+import com.flicker.models.PhotoResponse;
 import com.google.gson.Gson;
+import com.izeni.rapidosqlite.DataConnection;
+import com.izeni.rapidosqlite.query.Query;
+import com.izeni.rapidosqlite.query.QueryBuilder;
+import com.izeni.rapidosqlite.table.Column;
 
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
@@ -15,8 +23,12 @@ import javax.net.ssl.HttpsURLConnection;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.BehaviorSubject;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 import okio.Buffer;
 import okio.BufferedSource;
 import okio.Okio;
@@ -28,6 +40,8 @@ import okio.Okio;
 public class FlickerService {
 
     private static FlickerService instance;
+
+    private static final BehaviorSubject<List<ImageSearch>> subject = BehaviorSubject.create();
 
     private Gson gson = new Gson();
 
@@ -42,7 +56,45 @@ public class FlickerService {
         return instance;
     }
 
+    public Observable<List<ImageSearch>> observeRecentSearches() {
+        return subject.observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public void updateCurrentQueryText(final String text) {
+        Observable.just(text)
+                .observeOn(Schedulers.io())
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) throws Exception {
+                        DataConnection.Companion.doAndClose(new Function1<DataConnection, Unit>() {
+                            @Override
+                            public Unit invoke(DataConnection dataConnection) {
+                                Query query = QueryBuilder.Companion.with(ImageSearch.TABLE_NAME)
+                                        .select(new Column[]{Column.Companion.getID(), ImageSearch.QUERY})
+                                        .whereLike(ImageSearch.QUERY, text)
+                                        .build();
+
+                                List<ImageSearch> searches = dataConnection.findAll(ImageSearch.BUILDER, query);
+
+                                subject.onNext(searches);
+
+                                return Unit.INSTANCE;
+                            }
+                        });
+                    }
+                });
+    }
+
     public Observable<List<Photo>> getImages(final String query) {
+        DataConnection.Companion.doAndClose(new Function1<DataConnection, Unit>() {
+            @Override
+            public Unit invoke(DataConnection dataConnection) {
+                dataConnection.save(new ImageSearch(query));
+
+                return Unit.INSTANCE;
+            }
+        });
+
         return Observable.just(query)
                 .subscribeOn(Schedulers.io())
                 .map(new Function<Object, List<Photo>>() {

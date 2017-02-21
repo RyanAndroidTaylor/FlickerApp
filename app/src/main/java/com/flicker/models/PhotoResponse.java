@@ -1,4 +1,4 @@
-package com.flicker;
+package com.flicker.models;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ import java.util.List;
 public class PhotoResponse {
     public Photos photos;
 
-    class Photos {
+    public class Photos {
         public List<Photo> photo;
     }
 }

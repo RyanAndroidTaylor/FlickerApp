@@ -2,6 +2,8 @@ package com.flicker;
 
 import android.app.Application;
 
+import com.flicker.database.DatabaseOpenHelper;
+import com.izeni.rapidosqlite.DataConnection;
 import com.squareup.picasso.Picasso;
 
 /**
@@ -18,6 +20,8 @@ public class App extends Application {
 
         picasso = Picasso.with(this);
         picasso.setLoggingEnabled(true);
+
+        DataConnection.Companion.init(new DatabaseOpenHelper(this));
     }
 
     public static Picasso getPicasso() {

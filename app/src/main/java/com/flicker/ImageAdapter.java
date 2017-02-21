@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.flicker.models.Photo;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,11 +74,13 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             imageView.post(new Runnable() {
                 @Override
                 public void run() {
-                    App.getPicasso()
-                            .load(photo.url_m)
-                            .resize(imageView.getWidth(), imageView.getHeight())
-                            .centerCrop()
-                            .into(imageView);
+                    if (imageView.getWidth() > 0 || imageView.getHeight() > 0) {
+                        App.getPicasso()
+                                .load(photo.url_m)
+                                .resize(imageView.getWidth(), imageView.getHeight())
+                                .centerCrop()
+                                .into(imageView);
+                    }
                 }
             });
         }

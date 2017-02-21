@@ -1,4 +1,4 @@
-package com.flicker.fragments;
+package com.flicker.search;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 
 import com.flicker.FlickerActivity;
 import com.flicker.ImageAdapter;
-import com.flicker.Photo;
+import com.flicker.models.Photo;
 import com.flicker.R;
 import com.flicker.details.DetailFragment;
 
